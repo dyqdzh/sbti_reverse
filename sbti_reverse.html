@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SBTI 反向指南 & 人格百科</title>
+  <style>
+    /* ── Night palette — blue tones ── */
+    :root {
+      --bg:           #0c1018;
+      --panel:        #131624;
+      --panel2:       #1a2038;
+      --text:         #c8d4ec;
+      --muted:        #526080;
+      --line:         #1e2840;
+      --soft:         #141828;
+      --accent:       #6a9fd8;
+      --accent-s:     #9bbef5;
+      --shadow:       0 16px 40px rgba(0,0,0,.55);
+      --radius:       22px;
+      --tag-l-bg:     #0e1e30; --tag-l-t: #60a8e8;
+      --tag-m-bg:     #1e1800; --tag-m-t: #d4a830;
+      --tag-h-bg:     #200e38; --tag-h-t: #c080f0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at top left, #0f1420 0, #0c1018 40%, #090e18 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    h1,h2,h3,h4,p { margin:0; }
+    button { border:0; cursor:pointer; font:inherit; transition:transform .16s, box-shadow .16s, opacity .16s; }
+    button:hover { transform:translateY(-1px); }
+
+    .shell { max-width: 1000px; margin: 0 auto; padding: 24px 16px 64px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Eyebrow badge ── */
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--accent-s);
+      border: 1px solid var(--line); background: var(--soft);
+      border-radius: 999px; padding: 8px 14px; margin-bottom: 16px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 32px 28px 28px; margin-top: 20px;
+      overflow: hidden; position: relative;
+    }
+    .hero::after {
+      content:""; position:absolute; right:-60px; top:-60px;
+      width:200px; height:200px; border-radius:50%;
+      background: radial-gradient(circle, rgba(106,159,216,.13), transparent 70%);
+      pointer-events:none;
+    }
+    .hero h1 {
+      font-size: clamp(26px,5vw,48px);
+      line-height: 1.1; letter-spacing: -.03em;
+      color: var(--accent-s);
+    }
+    .hero .sub {
+      margin-top: 12px; color: var(--muted);
+      font-size: 15px; line-height: 1.75; max-width: 680px;
+    }
+    .hero-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:22px; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: var(--accent); color: #090e18;
+      padding: 12px 22px; border-radius: 14px; font-weight: 700; font-size:14px;
+      box-shadow: 0 8px 24px rgba(106,159,216,.28);
+    }
+    .btn-secondary {
+      background: var(--panel2); color: var(--accent-s);
+      padding: 12px 22px; border-radius: 14px; font-weight: 700; font-size:14px;
+      border: 1px solid var(--line);
+    }
+    .btn-primary.active, .btn-secondary.active-tab {
+      background: var(--accent); color: #090e18;
+      box-shadow: 0 8px 24px rgba(106,159,216,.32);
+    }
+
+    /* ── Tab pills ── */
+    .tab-wrap {
+      display: inline-flex; gap: 8px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 999px; padding: 5px; margin-bottom: 28px;
+    }
+    .tab-btn {
+      padding: 9px 22px; border-radius: 999px;
+      background: transparent; color: var(--muted); font-weight: 700; font-size: 14px;
+      transition: all .18s;
+    }
+    .tab-btn.active {
+      background: var(--accent); color: #090e18;
+      box-shadow: 0 6px 18px rgba(106,159,216,.30);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .section { display:none; }
+    .section.active { display:block; }
+
+    /* ══════════════════════════════
+       GUIDE — personality selector
+    ══════════════════════════════ */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+      gap: 10px; margin-bottom: 24px;
+    }
+    .type-card {
+      background: linear-gradient(180deg, var(--panel2), var(--panel));
+      border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px 10px 14px; cursor:pointer; text-align:center;
+      transition: border-color .18s, transform .18s, box-shadow .18s;
+      user-select:none;
+    }
+    .type-card:hover {
+      border-color: var(--accent); transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(106,159,216,.20);
+    }
+    .type-card.selected {
+      border-color: var(--accent); background: var(--soft);
+      box-shadow: 0 0 0 3px rgba(106,159,216,.20);
+    }
+    .type-card.drunk-card { border-color: #3a2800; }
+    .type-card.drunk-card:hover, .type-card.drunk-card.selected { border-color: #d4a830; }
+    .type-card.hhhh-card { border-color: #1a1040; }
+    .type-card.hhhh-card:hover, .type-card.hhhh-card.selected { border-color: #7a60f0; }
+    .tc-code { font-size: 1rem; font-weight: 800; color: var(--accent-s); word-break:break-all; }
+    .tc-cn   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ══════════════════════════════
+       ADVICE PANEL
+    ══════════════════════════════ */
+    #advice-panel { display:none; }
+    .adv-card { margin-top: 4px; }
+
+    /* Head */
+    .adv-head {
+      display: grid; grid-template-columns: auto 1fr; gap: 22px;
+      align-items: start; padding: 24px 26px 22px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, #141828, #0e1220);
+      border-radius: var(--radius) var(--radius) 0 0;
+      position:relative; overflow:hidden;
+    }
+    .adv-head::after {
+      content:""; position:absolute; right:-40px; top:-40px;
+      width:160px; height:160px; border-radius:50%;
+      background: radial-gradient(circle, rgba(106,159,216,.10), transparent 70%);
+      pointer-events:none;
+    }
+    .adv-img {
+      width: 90px; height: 90px; border-radius: 14px;
+      object-fit: cover; border: 1px solid var(--line); flex-shrink:0;
+    }
+    .adv-code { font-size: 2rem; font-weight: 900; color: var(--accent-s); letter-spacing:-.02em; }
+    .adv-cn   { font-size: 1.05rem; color: var(--text); margin-top: 4px; }
+    .adv-intro { font-size: 13px; color: var(--accent); font-style:italic; margin-top: 6px; }
+    .adv-pattern {
+      display:inline-block; margin-top: 10px;
+      font-family: monospace; font-size: 12px; color: var(--muted);
+      background: var(--bg); padding: 4px 12px; border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+
+    /* Body */
+    .adv-body { padding: 22px 26px; }
+    .sec-label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px;
+    }
+
+    /* Score overview — 5-column mini panels */
+    .score-grid {
+      display: grid; grid-template-columns: repeat(5,1fr); gap: 10px;
+      margin-bottom: 28px;
+    }
+    .model-block {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: 16px; padding: 14px 12px;
+    }
+    .model-name { font-size: 11px; color: var(--muted); font-weight:700; margin-bottom:10px; }
+    .dim-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
+    .dim-label { font-size: 12px; color: var(--text); }
+    .lvl-tag {
+      padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 800;
+    }
+    .lvl-L { background:var(--tag-l-bg); color:var(--tag-l-t); }
+    .lvl-M { background:var(--tag-m-bg); color:var(--tag-m-t); }
+    .lvl-H { background:var(--tag-h-bg); color:var(--tag-h-t); }
+
+    /* Per-dim groups */
+    .dim-groups { display:flex; flex-direction:column; gap:14px; }
+    .dim-grp {
+      border: 1px solid var(--line); border-radius: 18px; overflow:hidden;
+      background: linear-gradient(180deg, var(--panel2), var(--panel));
+    }
+    .dim-grp-head {
+      display:flex; align-items:center; gap:10px; padding:12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, #141828, var(--panel));
+    }
+    .dgh-name  { font-weight:700; font-size:13px; flex:1; }
+    .dgh-score { font-size:11px; color:var(--muted); }
+
+    /* Question advice rows (styled like original .option) */
+    .q-rows { padding:12px; display:flex; flex-direction:column; gap:8px; }
+    .q-row {
+      display:flex; align-items:flex-start; gap:12px;
+      padding: 13px 14px; border-radius:14px;
+      border: 1px solid var(--line); background: var(--bg);
+      transition: border-color .15s, background .15s;
+    }
+    .q-row:hover { border-color: #2a3a60; background: #0d1228; }
+    .q-num {
+      font-weight:800; font-size:12px; color:var(--accent);
+      min-width:28px; padding-top:2px; flex-shrink:0;
+    }
+    .q-body { flex:1; }
+    .q-text { font-size:12.5px; color:var(--muted); line-height:1.6; margin-bottom:8px; }
+    .q-ans-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .q-ans-letter {
+      background: var(--accent); color: #090e18;
+      padding: 3px 12px; border-radius: 8px; font-weight:800; font-size:13px;
+    }
+    .q-ans-text { font-size:13px; color:var(--text); font-weight:600; }
+
+    /* Special box */
+    .sp-box {
+      border-radius: 18px; padding: 20px; margin-bottom: 0;
+    }
+    .sp-box.drunk { background:#100a00; border:1px solid #3a2800; }
+    .sp-box.hhhh  { background:#0e0820; border:1px solid #2a1a60; }
+    .sp-box h4    { font-size:15px; margin-bottom:10px; }
+    .sp-box.drunk h4 { color:#d4a830; }
+    .sp-box.hhhh  h4 { color:#9d8fff; }
+    .sp-box p   { font-size:13px; color:var(--muted); line-height:1.8; }
+    .sp-step {
+      padding:10px 14px; border-radius:12px; margin-top:10px;
+      font-size:13px; line-height:1.7;
+    }
+    .sp-step.drunk { background:#1a1200; color:var(--text); border:1px solid #3a2800; }
+    .sp-step.hhhh  { background:#150e28; color:var(--text); border:1px solid #2a1a60; }
+    .sp-note {
+      margin-top:18px; padding:14px 18px; border-radius:14px;
+      background:var(--bg); border:1px solid var(--line); font-size:12px; color:var(--muted);
+    }
+
+    /* ══════════════════════════════
+       WIKI
+    ══════════════════════════════ */
+    .wiki-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;
+    }
+    .wiki-card {
+      background: linear-gradient(180deg, var(--panel2), var(--panel));
+      border:1px solid var(--line); border-radius:var(--radius);
+      overflow:hidden; transition:transform .2s, box-shadow .2s;
+    }
+    .wiki-card:hover { transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,.5); }
+
+    .wiki-img-wrap { width:100%; position:relative; background:var(--bg); }
+    .wiki-img { width:100%; height:auto; display:block; }
+    .wiki-img-overlay { display:none; }
+
+    .wiki-body { padding:18px; }
+    .wc-top { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
+    .wc-code { font-size:1.5rem; font-weight:900; color:var(--accent-s); letter-spacing:-.02em; }
+    .wc-cn   { font-size:14px; color:var(--muted); }
+    .wc-intro {
+      font-style:italic; font-size:13px; color:var(--accent);
+      border-left:3px solid var(--accent); padding-left:10px; margin-bottom:12px;
+    }
+    .wc-desc {
+      font-size:13px; color:var(--text); line-height:1.8;
+      max-height:108px; overflow:hidden; position:relative;
+      transition: max-height .3s ease;
+    }
+    .wc-desc.expanded { max-height:1200px; }
+    .wc-desc:not(.expanded)::after {
+      content:''; position:absolute; bottom:0; left:0; right:0; height:40px;
+      background:linear-gradient(transparent, var(--panel));
+    }
+    .wc-expand {
+      margin-top:8px; font-size:12px; color:var(--accent);
+      background:none; border:none; padding:0; cursor:pointer; display:block;
+    }
+    .wc-expand:hover { color:var(--accent-s); }
+    .wc-pattern {
+      margin-top:12px; font-family:monospace; font-size:11px; color:var(--muted);
+      background:var(--bg); padding:5px 12px; border-radius:8px;
+      border:1px solid var(--line); display:inline-block;
+    }
+    .wc-pattern.sp-pattern { color:#d4a830; background:#100a00; border-color:#3a2800; }
+    .wiki-card.wiki-drunk .wc-code { color:#d4a830; }
+    .wiki-card.wiki-hhhh  .wc-code { color:#9d8fff; }
+
+    /* ── Responsive ── */
+    @media(max-width:700px){
+      .score-grid { grid-template-columns:1fr 1fr; }
+      .type-grid  { grid-template-columns:repeat(4,1fr); }
+      .wiki-grid  { grid-template-columns:1fr; }
+      .adv-head   { grid-template-columns:1fr; }
+      .adv-img    { width:72px; height:72px; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Hero -->
+  <div class="card hero" style="margin-top:20px;">
+    <span class="eyebrow">🌙 SBTI 反向指南</span>
+    <h1>知道目标，<br>才知道怎么答题。</h1>
+    <p class="sub">选择你想测出的人格，系统会逐题告诉你应该选哪个选项，以及对应的维度分数目标。</p>
+    <div class="hero-actions">
+      <div class="tab-wrap">
+        <button class="tab-btn active" onclick="switchTab('guide')">🎯 反向指南</button>
+        <button class="tab-btn" onclick="switchTab('wiki')">📖 人格百科</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;">
+
+    <!-- ── GUIDE ── -->
+    <div id="guide" class="section active">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        共 27 种人格 · 点击卡片获取逐题作答建议 ↓
+      </p>
+      <div class="type-grid" id="guide-grid"></div>
+      <div id="advice-panel"></div>
+    </div>
+
+    <!-- ── WIKI ── -->
+    <div id="wiki" class="section">
+      <div class="wiki-grid" id="wiki-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════
+
+const QUESTIONS = [
+  {id:'q1', dim:'S1', num:1,
+   text:'我不仅是屌丝，我还是joker，我还是咸鱼，这辈子没谈过一场恋爱，胆怯又自卑……求求哥们给我们这种小丑一点活路吧，我真的不想在白天把枕巾哭湿一大片',
+   options:[{label:'我哭了。。',value:1},{label:'这是什么。。',value:2},{label:'这不是我！',value:3}]},
+  {id:'q2', dim:'S1', num:2,
+   text:'我不够好，周围的人都比我优秀',
+   options:[{label:'确实',value:1},{label:'有时',value:2},{label:'不是',value:3}]},
+  {id:'q3', dim:'S2', num:3,
+   text:'我很清楚真正的自己是什么样的',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+  {id:'q4', dim:'S2', num:4,
+   text:'我内心有真正追求的东西',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+  {id:'q5', dim:'S3', num:5,
+   text:'我一定要不断往上爬、变得更厉害',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+  {id:'q6', dim:'S3', num:6,
+   text:'外人的评价对我来说无所吊谓。',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+  {id:'q7', dim:'E1', num:7,
+   text:'对象超过5小时没回消息，说自己窜稀了，你会怎么想？',
+   options:[{label:'拉稀不可能5小时，也许ta隐瞒了我。',value:1},{label:'在信任和怀疑之间摇摆。',value:2},{label:'也许今天ta真的不太舒服。',value:3}]},
+  {id:'q8', dim:'E1', num:8,
+   text:'我在感情里经常担心被对方抛弃',
+   options:[{label:'是的',value:1},{label:'偶尔',value:2},{label:'不是',value:3}]},
+  {id:'q9', dim:'E2', num:9,
+   text:'我对天发誓，我对待每一份感情都是认真的！',
+   options:[{label:'并没有',value:1},{label:'也许？',value:2},{label:'是的！（问心无愧骄傲脸）',value:3}]},
+  {id:'q10', dim:'E2', num:10,
+   text:'你的恋爱对象是一个尊老爱幼，温柔敦厚，洁身自好……花容月貌的人，此时你会？',
+   options:[{label:'就算ta再优秀我也不会陷入太深。',value:1},{label:'会介于A和C之间。',value:2},{label:'会非常珍惜ta，也许会变成恋爱脑。',value:3}]},
+  {id:'q11', dim:'E3', num:11,
+   text:'恋爱后，对象非常黏人，你作何感想？',
+   options:[{label:'那很爽了',value:1},{label:'都行无所谓',value:2},{label:'我更喜欢保留独立空间',value:3}]},
+  {id:'q12', dim:'E3', num:12,
+   text:'我在任何关系里都很重视个人空间',
+   options:[{label:'我更喜欢依赖与被依赖',value:1},{label:'看情况',value:2},{label:'是的！（斩钉截铁地说道）',value:3}]},
+  {id:'q13', dim:'A1', num:13,
+   text:'大多数人是善良的',
+   options:[{label:'其实邪恶的人心比世界上的痔疮更多。',value:1},{label:'也许吧。',value:2},{label:'是的，我愿相信好人更多。',value:3}]},
+  {id:'q14', dim:'A1', num:14,
+   text:'你走在街上，一位萌萌的小女孩蹦蹦跳跳地朝你走来（实在是非常萌的那种），她递给你一根棒棒糖，此时你作何感想？',
+   options:[{label:'呜呜她真好真可爱！居然给我棒棒糖！',value:3},{label:'一脸懵逼，作挠头状',value:2},{label:'这也许是一种新型诈骗？还是走开为好。',value:1}]},
+  {id:'q15', dim:'A2', num:15,
+   text:'快考试了，学校规定必须上晚自习，但今晚你约了女/男神一起玩《绝地求生》，你怎么办？',
+   options:[{label:'翘了！反正就一次！',value:1},{label:'干脆请个假吧。',value:2},{label:'都快考试了还去啥。',value:3}]},
+  {id:'q16', dim:'A2', num:16,
+   text:'我喜欢打破常规，不喜欢被束缚',
+   options:[{label:'认同',value:1},{label:'保持中立',value:2},{label:'不认同',value:3}]},
+  {id:'q17', dim:'A3', num:17,
+   text:'我做事通常有目标。',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+  {id:'q18', dim:'A3', num:18,
+   text:'突然某一天，我意识到人生哪有什么狗屁意义，人不过是和动物一样被各种欲望支配着……我们简直和猪狗一样没什么区别。',
+   options:[{label:'是这样的。',value:1},{label:'也许是，也许不是。',value:2},{label:'这简直是胡扯',value:3}]},
+  {id:'q19', dim:'Ac1', num:19,
+   text:'我做事主要为了取得成果和进步，而不是避免麻烦和风险。',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+  {id:'q20', dim:'Ac1', num:20,
+   text:'你因便秘坐在马桶上（已长达30分钟），拉不出很难受。此时你更像',
+   options:[{label:'再坐三十分钟看看，说不定就有了。',value:1},{label:'用力拍打自己的屁股并说："死屁股，快拉啊！"',value:2},{label:'使用开塞露，快点拉出来才好。',value:3}]},
+  {id:'q21', dim:'Ac2', num:21,
+   text:'我做决定比较果断，不喜欢犹豫',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+  {id:'q22', dim:'Ac2', num:22,
+   text:'此题没有题目，请盲选',
+   options:[{label:'反复思考后感觉应该选A？',value:1},{label:'啊，要不选B？',value:2},{label:'不会就选C？',value:3}]},
+  {id:'q23', dim:'Ac3', num:23,
+   text:'别人说你"执行力强"，你内心更接近哪句？',
+   options:[{label:'我被逼到最后确实执行力超强。。。',value:1},{label:'啊，有时候吧。',value:2},{label:'是的，事情本来就该被推进',value:3}]},
+  {id:'q24', dim:'Ac3', num:24,
+   text:'我做事常常有计划，____',
+   options:[{label:'然而计划不如变化快。',value:1},{label:'有时能完成，有时不能。',value:2},{label:'我讨厌被打破计划。',value:3}]},
+  {id:'q25', dim:'So1', num:25,
+   text:'你因玩《第五人格》而结识许多网友，并被邀请线下见面，你的想法是？',
+   options:[{label:'网上口嗨下就算了，真见面还是有点忐忑。',value:1},{label:'见网友也挺好，反正谁来聊我就聊两句。',value:2},{label:'我会打扮一番并热情聊天，万一呢，我是说万一呢？',value:3}]},
+  {id:'q26', dim:'So1', num:26,
+   text:'朋友带了ta的朋友一起来玩，你最可能的状态是',
+   options:[{label:'对"朋友的朋友"天然有点距离感，怕影响二人关系',value:1},{label:'看对方，能玩就玩。',value:2},{label:'朋友的朋友应该也算我的朋友！要热情聊天',value:3}]},
+  {id:'q27', dim:'So2', num:27,
+   text:'我和人相处主打一个电子围栏，靠太近会自动报警。',
+   options:[{label:'认同',value:3},{label:'中立',value:2},{label:'不认同',value:1}]},
+  {id:'q28', dim:'So2', num:28,
+   text:'我渴望和我信任的人关系密切，熟得像失散多年的亲戚。',
+   options:[{label:'认同',value:1},{label:'中立',value:2},{label:'不认同',value:3}]},
+  {id:'q29', dim:'So3', num:29,
+   text:'有时候你明明对一件事有负面的看法，但最后没说出来。多数情况下原因是：',
+   options:[{label:'这种情况较少。',value:1},{label:'可能碍于情面或者关系。',value:2},{label:'不想让别人知道自己是个阴暗的人。',value:3}]},
+  {id:'q30', dim:'So3', num:30,
+   text:'我在不同人面前会表现出不一样的自己',
+   options:[{label:'不认同',value:1},{label:'中立',value:2},{label:'认同',value:3}]},
+];
+
+const DIM_Q = {
+  S1:['q1','q2'], S2:['q3','q4'], S3:['q5','q6'],
+  E1:['q7','q8'], E2:['q9','q10'], E3:['q11','q12'],
+  A1:['q13','q14'], A2:['q15','q16'], A3:['q17','q18'],
+  Ac1:['q19','q20'], Ac2:['q21','q22'], Ac3:['q23','q24'],
+  So1:['q25','q26'], So2:['q27','q28'], So3:['q29','q30'],
+};
+const DIM_NAMES = {
+  S1:'S1 自尊自信', S2:'S2 自我清晰度', S3:'S3 核心价值',
+  E1:'E1 依恋安全感', E2:'E2 情感投入度', E3:'E3 边界与依赖',
+  A1:'A1 世界观倾向', A2:'A2 规则与灵活度', A3:'A3 人生意义感',
+  Ac1:'Ac1 动机导向', Ac2:'Ac2 决策风格', Ac3:'Ac3 执行模式',
+  So1:'So1 社交主动性', So2:'So2 人际边界感', So3:'So3 表达与真实度',
+};
+const MODELS = {
+  '自我模型':['S1','S2','S3'], '情感模型':['E1','E2','E3'],
+  '态度模型':['A1','A2','A3'], '行动驱力':['Ac1','Ac2','Ac3'],
+  '社交模型':['So1','So2','So3'],
+};
+const DIM_ORDER = ['S1','S2','S3','E1','E2','E3','A1','A2','A3','Ac1','Ac2','Ac3','So1','So2','So3'];
+
+const NORMAL_TYPES = [
+  {code:'CTRL',    pattern:'HHH-HMH-MHH-HHH-MHM'},
+  {code:'ATM-er',  pattern:'HHH-HHM-HHH-HMH-MHL'},
+  {code:'Dior-s',  pattern:'MHM-MMH-MHM-HMH-LHL'},
+  {code:'BOSS',    pattern:'HHH-HMH-MMH-HHH-LHL'},
+  {code:'THAN-K',  pattern:'MHM-HMM-HHM-MMH-MHL'},
+  {code:'OH-NO',   pattern:'HHL-LMH-LHH-HHM-LHL'},
+  {code:'GOGO',    pattern:'HHM-HMH-MMH-HHH-MHM'},
+  {code:'SEXY',    pattern:'HMH-HHL-HMM-HMM-HLH'},
+  {code:'LOVE-R',  pattern:'MLH-LHL-HLH-MLM-MLH'},
+  {code:'MUM',     pattern:'MMH-MHL-HMM-LMM-HLL'},
+  {code:'FAKE',    pattern:'HLM-MML-MLM-MLM-HLH'},
+  {code:'OJBK',    pattern:'MMH-MMM-HML-LMM-MML'},
+  {code:'MALO',    pattern:'MLH-MHM-MLH-MLH-LMH'},
+  {code:'JOKE-R',  pattern:'LLH-LHL-LML-LLL-MLM'},
+  {code:'WOC!',    pattern:'HHL-HMH-MMH-HHM-LHH'},
+  {code:'THIN-K',  pattern:'HHL-HMH-MLH-MHM-LHH'},
+  {code:'SHIT',    pattern:'HHL-HLH-LMM-HHM-LHH'},
+  {code:'ZZZZ',    pattern:'MHL-MLH-LML-MML-LHM'},
+  {code:'POOR',    pattern:'HHL-MLH-LMH-HHH-LHL'},
+  {code:'MONK',    pattern:'HHL-LLH-LLM-MML-LHM'},
+  {code:'IMSB',    pattern:'LLM-LMM-LLL-LLL-MLM'},
+  {code:'SOLO',    pattern:'LML-LLH-LHL-LML-LHM'},
+  {code:'FUCK',    pattern:'MLL-LHL-LLM-MLL-HLH'},
+  {code:'DEAD',    pattern:'LLL-LLM-LML-LLL-LHM'},
+  {code:'IMFW',    pattern:'LLH-LHL-LML-LLL-MLL'},
+];
+
+const TYPE_LIB = {
+  CTRL:{cn:'拿捏者',intro:'怎么样，被我拿捏了吧？',desc:'恭喜您，您测出了全中国最为罕见的人格，您是宇宙熵增定律的天然反抗者！全世界所谓成功人士里，99.99%都是您的拙劣模仿者。CTRL人格，是行走的人形自走任务管理器，普通人眼中的"规则"，在您这里只是出厂的基础参数设置；凡人所谓的"计划"，对您而言不过是心血来潮的随手涂鸦。拥有一个CTRL朋友意味着什么？意味着你的人生导航系统会变得更加精准、高效。他们是你混乱生活最后的备份盘，是宇宙崩塌前唯一还亮着的那个重启键。'},
+  'ATM-er':{cn:'送钱者',intro:'你以为我很有钱吗？',desc:'ATM-er不一定真的"送钱"，但可能永远在"支付"。支付时间、支付精力、支付耐心、支付一个本该安宁的夜晚。因此像一部老旧但坚固的ATM机，插进去的是别人的焦虑和麻烦，吐出来的是"没事，有我"的安心保证。您的人生就是一场盛大的、无人喝彩的单人付账秀。您竟用磐石般的可靠，承受了瀑布般的索取，偶尔夜深人静才会对着账单发出一声叹息：我这该死的、无处安放的责任心啊。'},
+  'Dior-s':{cn:'屌丝',intro:'等着我屌丝逆袭。',desc:'恭喜！您并非屌丝，您是犬儒主义先贤第欧根尼失散多年的精神传人，因为屌丝的全称是 Diogenes\' Original Realist - sage。Dior-s人格，是对当代消费主义陷阱和成功学PUA最彻底的蔑视。他们不是"不求上进"，而是早已看穿一切"上进"的尽头不过是更高级的牢房。屌丝有着大智慧——当别人在追逐风口时，Dior-s早已在自己的精神木桶里晒着太阳，达到了"人桶合一"的至高境界。'},
+  BOSS:{cn:'领导者',intro:'方向盘给我，我来开。',desc:'BOSS是一个手里永远拿着方向盘的人。哪怕油箱已经亮了红灯，哪怕导航在胡说八道，你都会面无表情地说一句：我来开。然后真的把车开到了目的地。该人格拥有独立的物理法则——永恒向上定律。BOSS人格看世界，就像玩通关了的玩家在看新手教程。他们眼中的"自我突破"，约等于普通人眼中的"自虐"。你说这太卷了，他会用一种看弱鸡的眼神看着你：不是我太狠，是你太松。'},
+  'THAN-K':{cn:'感恩者',intro:'我感谢苍天！我感谢大地！',desc:'恭喜您，您测出了全中国最为罕见的人格。您应当感谢我！感谢您在此刻拥有了生命的滋润！倘若您上班路上堵车了？您也应当说一句：我感谢这次堵车，它让我有更多时间聆听这首美妙的歌曲。是的，THAN-K拥有温润如玉的性格和海纳百川的胸怀。他们眼中的世界没有完全的坏人，只有"尚未被感恩光芒照耀到的朋友"。TA甚至能帮你从墙角的霉斑里发现一幅梵高风格的星空图。'},
+  'OH-NO':{cn:'哦不人',intro:'哦不！我怎么会是这个人格？！',desc:'"哦不！"并非恐惧的尖叫，而是一种顶级的智慧。当普通人看到一个杯子放在桌沿，哦不人看到的是一场由"水渍-短路-火灾-全楼疏散-经济损失-蝴蝶效应-世界末日"构成的灾难史诗。于是，伴随着一声发自灵魂深处的 Oh, no!，他们会以迅雷不及掩耳之势把杯子挪到桌子正中央。哦不人是秩序的守护神，是混乱世界里最后那批神经绷得很直的体面人。'},
+  GOGO:{cn:'行者',intro:'gogogo~出发咯',desc:'经研究发现，GOGO人格的大脑构造与常人有根本性不同。GOGO活在一个极致的"所见即所得"世界里，人生信条简单粗暴到令人发指：只要我闭上眼睛，天就是黑的；只要我把钱都花了，我就没有钱了；只要我站在斑马线上，我现在就是行人了。对他们来说，世界上只有两种状态：已完成，和即将被我完成。'},
+  SEXY:{cn:'尤物',intro:'您就是天生的尤物！',desc:'当您走进一个房间，照明系统会自动将您识别为天生的尤物，并自觉调暗亮度。当您微笑时，周围的空气湿度也会显著下降，因为水蒸气都凝结成了人眼中的爱心。无论是谁，都容易对您的存在产生一种超标的注意力。传说，如果有足够多的SEXY人格聚集在一起开派对，其释放出的综合魅力能量足以暂时扭曲时空结构。'},
+  'LOVE-R':{cn:'多情者',intro:'爱意太满，现实显得有点贫瘠。',desc:'LOVE-R人格像远古神话时代幸存至今的珍稀物种。您简直是这个钢铁森林时代最后的、也是最不合时宜的吟游诗人。一片落叶，在常人眼里只是"秋天来了"，在LOVE-R眼中，则是一场关于轮回、牺牲与无言之爱的十三幕悲喜剧。您内心世界像一座永不关门的主题公园，一生都在寻找那个能陪你坐旋转木马直到宇宙尽头的灵魂伴侣。'},
+  MUM:{cn:'妈妈',intro:'或许...我可以叫你妈妈吗....?',desc:'恭喜您，您测出了全中国最稀有的妈妈人格。妈妈人格的底色是温柔，擅长感知情绪，具有超强共情力，知道什么时候该停下来，什么时候该对自己说一句"算了"。妈妈像一个医生，治愈了别人的不开心。只可惜，当妈妈落泪时，TA给自己的药，剂量总是比给别人小一号。MUM对自己的温柔，常常打了折。'},
+  FAKE:{cn:'伪人',intro:'已经，没有人类了。',desc:'SCP基金会紧急报告：SCP-CN-████ "伪人"。在社交场合，伪人是八面玲珑的存在，因为他们切换人格面具比切换手机输入法还快。你以为你交到了一个真心懂你的朋友？醒醒。你只是幸运地遇到了一个善于伪装、高性能的仿生人罢了。夜深人静时，伪人把面具一层层摘下来，最后才发现，面具下空得很，正是这些面具构成了自己。'},
+  OJBK:{cn:'无所谓人',intro:'我说随便，是真的随便。',desc:'让我们直面这个词的粗犷本质：OJBK。这已经不是一种人格，而是一种统治哲学。当凡人面临"中午吃米饭还是面条"的世纪抉择时，大脑在激烈燃烧卡路里；而OJBK人格，会用一种批阅奏章般的淡然，轻飘飘地吐出两个字：都行。这不是没主见，这是在告诉你：尔等凡俗的选择，于朕而言，皆为蝼蚁。'},
+  MALO:{cn:'吗喽',intro:'人生是个副本，而我只是一只吗喽。',desc:'朋友，你不是"童心未泯"，你压根就没进化。你的灵魂还停留在那个挂在树上荡秋千、看见香蕉就两眼放光的快乐时代。当人类祖先决定从树上下来、学会直立行走、穿上西装打领带时，吗喽人格的祖先在旁边的大树上看着他们，挠了挠屁股，嘴里发出一声不屑的"吱"。'},
+  'JOKE-R':{cn:'小丑',intro:'原来我们都是小丑。',desc:'请注意，JOKE-R人格不是一个"人"，更像一个把笑话穿在身上的小丑。你打开一层，是个笑话；再打开一层，是个段子；你一层层打开，直到最后，你发现最里面……是空的，只剩下一点微弱的回声在说：哈，没想到吧。JOKE-R是社交场合的气氛组组长兼唯一指定火力输出。所有人前仰后合地笑着，而笑得最开心的往往也是他们自己——用最大的笑声，盖住心碎的声音。'},
+  'WOC!':{cn:'握草人',intro:'卧槽，我怎么是这个人格？',desc:'我们发现了一种神奇的生物——WOC!人。他们拥有两种完全独立的操作系统：一个叫"表面系统"，负责发出"我操""牛逼""啊？"等一系列大惊小怪的拟声词；另一个叫"后台系统"，负责冷静分析：嗯，果然不出我所料。WOC!人深知，给傻逼讲道理，就像扶着烂泥上墙，不仅浪费体力，还弄自己一手屎。'},
+  'THIN-K':{cn:'思考者',intro:'已深度思考100s。',desc:'经研究发现，THIN-K人格的大脑构造与常人有根本性不同。正如名称所示，您的大脑长时间处于思考状态。您十分会审判信息，注重论点、论据、逻辑推理、潜在偏见，乃至"作者本人三代以内思想背景调查报告"的全套材料。当别人看到您独处时在发呆？愚蠢，那不是发呆，那是您的大脑正在对今天接收到的所有信息进行分类、归档和销毁。'},
+  SHIT:{cn:'愤世者',intro:'这个世界，构石一坨。',desc:'恭喜您，SHIT人格是宇宙中已知的唯一一种稀有人格。SHIT的行为模式是一场惊天动地的悖论戏剧。嘴上：这个项目简直是屎。手上：默默打开Excel，开始建构函数模型和甘特图。嘴上：这帮同事都是shit。手上：在同事搞砸之后，一边烦着，一边熬夜把烂摊子收拾得明明白白。别怕，那不是世界末日的警报，那是他马上要开始拯救世界的冲锋号。'},
+  ZZZZ:{cn:'装死者',intro:'我没死，我只是在睡觉。',desc:'恭喜您，您测出了全中国最稀有的装死人格。群里99+条消息您可以视而不见，但当有人发出"@全体成员 还有半小时就截止了"的最后通牒时，您会像刚从千年古墓里苏醒一样，缓缓地敲出一个"收到"，然后在29分钟内，交出一份虽然及格的答卷。您向宇宙证明了一个真理：有时什么都不做，就不会做错。'},
+  POOR:{cn:'贫困者',intro:'我穷，但我很专。',desc:'恭喜您，您测出了【POOR - 贫困者】。这个"贫困"不是钱包余额的判决书，更像一种欲望断舍离后的资源再分配。别人把精力撒成漫天二维码，你把精力压成一束激光，照哪儿，哪儿就开始冒烟。POOR的世界很简单：不重要的东西一律降噪，重要的东西狠狠干到底。一旦某件事被你认定值得钻，外界再吵也只是背景杂音。'},
+  MONK:{cn:'僧人',intro:'没有那种世俗的欲望。',desc:'当别人在KTV里参悟爱与恨的纠缠，MONK人格选择在家中参悟一份大道。MONK已然看破红尘，不希望闲人来扰其清修、破其道行。MONK的个人空间，是他们的结界，是他们的须弥山，神圣不可侵犯。MONK们不黏不缠，因为在他们的世界观里，行星与行星之间保持着亿万公里的距离，才构成和谐宇宙，人与人之间为什么不行？'},
+  IMSB:{cn:'傻者',intro:'认真的么？我真的是傻逼么？',desc:'恭喜您！您根本不在人类范畴内！您测出了百万年一遇的【IMSB】人格。IMSB人格的大脑里住着两个不死不休的究极战士：一个叫"我他妈冲了！"，另一个叫"我是个傻逼！"。当IMSB面对一个有好感的人时，前者说：冲啊！后者接着说：人家凭什么看得上你？最终结果：盯着对方背影直到消失，然后掏出手机搜索"如何克服社交恐惧症"。'},
+  SOLO:{cn:'孤儿',intro:'我哭了，我怎么会是孤儿？',desc:'恭喜您，您测出了全中国最稀有的【SOLO - 孤儿】人格。别急着哭，国王的加冕仪式，通常都是一个人。孤儿的自我价值感偏低，因此有时主动疏远他人，在自己的灵魂外围建起了一座名为"莫挨老子"的万里长城。孤儿就像一只把所有软肋都藏起来，然后用最硬的刺对着世界的刺猬。那满身的尖刺不是攻击，那是一句句说不出口的"别过来，我怕你也受伤"。'},
+  FUCK:{cn:'草者',intro:'操！这是什么人格？',desc:'恭喜您！您根本不在人类范畴内！您测出了百万年一遇的【FUCK】人格。人类文明城市里，出现了一株无法被任何除草剂杀死的、具有超级生命力的人形野草——那就是草者人格。在FUCK的世界观里，世俗规则简直毫无意义，并且FUCK的情绪开关是物理拨片式的：FUCK YEAH 和 FUCK OFF。当所有人都被驯化成了温顺家禽，FUCK则是荒野上最后那一声狼嚎。'},
+  DEAD:{cn:'死者',intro:'我，还活着吗？',desc:'恭喜您，您测出了全中国最为罕见的人格，只是"死者"这个名字实在有点晦气，所以也可以叫：Don\'t Expect Any Drives。死者已经看透了那些无意义的哲学思考，因此显得对一切"失去"了兴趣。死者们看世界的眼神，就像一位顶级玩家通关了所有主线、支线、隐藏任务，删档重开了999次之后，终于发现：这游戏压根就没意思。死者是超越了欲望和目标的终极贤者。'},
+  IMFW:{cn:'废物',intro:'我真的...是废物吗？',desc:'恭喜您，您测出的不是一个普通人格，您是一种极其珍稀的——【废物】。废物们的自尊通常有些脆弱，缺乏安全感，偶尔也会缺乏主见，因此能精确地感知到周围最强的那个WiFi信号——也就是他们心里最可靠的人。走进【废物】人格的生活，就像走进了一个顶级兰花温室：需要精确控制温度、湿度。给废物一颗糖，他们会还你一个完全信任你、亮晶晶的眼神。'},
+  HHHH:{cn:'傻乐者',intro:'哈哈哈哈哈哈。',desc:'恭喜您！由于您的思维回路过于清奇，标准人格库已全面崩溃。第一人格匹配率只有60%以下时，系统才会为您强制匹配这个人格——【HHHH - 傻乐者】。这个人格有什么特质？哈哈哈哈哈哈哈哈哈哈哈哈！对不起，这就是全部的特质了。怎么会有人的脑回路这么新奇。'},
+  DRUNK:{cn:'酒鬼',intro:'烈酒烧喉，不得不醉。',desc:'您为什么走路摇摇晃晃？您为什么总是情绪高涨？因为您体内流淌的不是血液，是美味的五粮液！是国窖1573！是江小白！您是否已经习惯了将白酒灌入保温杯，当作白开水一饮而下？多么伟大的白酒！它让您在饭桌上谈笑风生，在厕所里抱着马桶忏悔人生；直到第二天上午十点，您的头像裂开的核桃，嘴角挂着食物残渣，灵魂缩在角落里。'},
+};
+
+const TYPE_IMGS = {
+  CTRL:'./image/CTRL.png', 'ATM-er':'./image/ATM-er.png', 'Dior-s':'./image/Dior-s.jpg',
+  BOSS:'./image/BOSS.png', 'THAN-K':'./image/THAN-K.png', 'OH-NO':'./image/OH-NO.png',
+  GOGO:'./image/GOGO.png', SEXY:'./image/SEXY.png', 'LOVE-R':'./image/LOVE-R.png',
+  MUM:'./image/MUM.png', FAKE:'./image/FAKE.png', OJBK:'./image/OJBK.png',
+  MALO:'./image/MALO.png', 'JOKE-R':'./image/JOKE-R.jpg', 'WOC!':'./image/WOC.png',
+  'THIN-K':'./image/THIN-K.png', SHIT:'./image/SHIT.png', ZZZZ:'./image/ZZZZ.png',
+  POOR:'./image/POOR.png', MONK:'./image/MONK.png', IMSB:'./image/IMSB.png',
+  SOLO:'./image/SOLO.png', FUCK:'./image/FUCK.png', DEAD:'./image/DEAD.png',
+  IMFW:'./image/IMFW.png', HHHH:'./image/HHHH.png', DRUNK:'./image/DRUNK.png',
+};
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+
+function parsePattern(pat) {
+  const chars = pat.replace(/-/g,'');
+  const r = {};
+  DIM_ORDER.forEach((d,i) => r[d] = chars[i]);
+  return r;
+}
+function getQ(id) { return QUESTIONS.find(q => q.id === id); }
+function optForLevel(q, lv) {
+  const v = lv==='L'?1 : lv==='M'?2 : 3;
+  return q.options.find(o => o.value === v);
+}
+function optLetter(q, opt) { return ['A','B','C'][q.options.indexOf(opt)] ?? '?'; }
+function trunc(s, n) { return s.length > n ? s.slice(0,n)+'…' : s; }
+function safe(code) { return code.replace(/[^a-zA-Z0-9]/g,'-'); }
+
+// ═══════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  document.querySelectorAll('.tab-btn')[tab==='guide'?0:1].classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+//  GUIDE GRID
+// ═══════════════════════════════════════════════
+let selCode = null;
+
+function buildGuideGrid() {
+  const all = [...NORMAL_TYPES.map(t=>t.code), 'HHHH', 'DRUNK'];
+  document.getElementById('guide-grid').innerHTML = all.map(code => {
+    const lib = TYPE_LIB[code];
+    const extra = code==='DRUNK' ? ' drunk-card' : code==='HHHH' ? ' hhhh-card' : '';
+    return `<div class="type-card${extra}" id="gc-${safe(code)}" onclick="pickType('${code}')">
+      <div class="tc-code">${code}</div>
+      <div class="tc-cn">${lib.cn}</div>
+    </div>`;
+  }).join('');
+}
+
+function pickType(code) {
+  if (selCode) {
+    const prev = document.getElementById('gc-'+safe(selCode));
+    if (prev) prev.classList.remove('selected');
+  }
+  selCode = code;
+  const card = document.getElementById('gc-'+safe(code));
+  if (card) card.classList.add('selected');
+  renderAdvice(code);
+  document.getElementById('advice-panel').style.display = 'block';
+  setTimeout(()=>document.getElementById('advice-panel').scrollIntoView({behavior:'smooth',block:'start'}), 60);
+}
+
+// ═══════════════════════════════════════════════
+//  ADVICE PANEL
+// ═══════════════════════════════════════════════
+function imgTag(code, cls='adv-img') {
+  return `<img class="${cls}" src="${TYPE_IMGS[code]}" alt="${code}">`;
+}
+
+function renderAdvice(code) {
+  const panel = document.getElementById('advice-panel');
+  const lib = TYPE_LIB[code];
+
+  // ── DRUNK ──
+  if (code === 'DRUNK') {
+    panel.innerHTML = `<div class="card adv-card">
+      <div class="adv-head">
+        ${imgTag(code)}
+        <div>
+          <div class="adv-code">${code}</div>
+          <div class="adv-cn">${lib.cn}</div>
+          <div class="adv-intro">${lib.intro}</div>
+        </div>
+      </div>
+      <div class="adv-body">
+        <div class="sp-box drunk">
+          <h4>🍶 如何触发 DRUNK 人格</h4>
+          <p>DRUNK 是隐藏彩蛋人格，<strong style="color:#d4a830">与30道正题的答案完全无关</strong>，只需在特殊题中这样选：</p>
+          <div class="sp-step drunk">第一步：在特殊题「您平时有什么爱好？」中选 <strong style="color:#d4a830">C — 饮酒</strong></div>
+          <div class="sp-step drunk">第二步：在随即出现的「您对饮酒的态度是？」中选 <strong style="color:#d4a830">B — 我习惯将白酒灌在保温杯，当白开水喝，酒精令我信服。</strong></div>
+          <div class="sp-step drunk" style="color:var(--muted)">✓ 完成以上两步，系统直接强制输出 DRUNK，忽略所有其他分数。30道正题随便答即可。</div>
+        </div>
+      </div>
+    </div>`;
+    return;
+  }
+
+  // ── HHHH ──
+  if (code === 'HHHH') {
+    panel.innerHTML = `<div class="card adv-card">
+      <div class="adv-head">
+        ${imgTag(code)}
+        <div>
+          <div class="adv-code">${code}</div>
+          <div class="adv-cn">${lib.cn}</div>
+          <div class="adv-intro">${lib.intro}</div>
+        </div>
+      </div>
+      <div class="adv-body">
+        <div class="sp-box hhhh">
+          <h4>😂 关于 HHHH 傻乐者</h4>
+          <p>HHHH 是<strong style="color:#9d8fff">兜底人格</strong>，当你的答案组合与25种标准人格的最高匹配相似度低于60%时触发。无法精确锁定，但可参考以下思路：</p>
+          <div class="sp-step hhhh">尝试在不同维度混合高低分，使得结果既不偏向高分也不偏向低分，让25种标准人格都无法高度匹配。</div>
+          <div class="sp-step hhhh">注意：<strong>不要</strong>在特殊题选"饮酒→保温杯"，否则会触发 DRUNK 而非 HHHH。</div>
+          <div class="sp-step hhhh" style="color:var(--muted)">提示：全选B（中立）并不能触发HHHH，因为OJBK等人格会高度匹配。建议随机尝试几次。</div>
+        </div>
+      </div>
+    </div>`;
+    return;
+  }
+
+  // ── Normal type ──
+  const typeData = NORMAL_TYPES.find(t => t.code === code);
+  const levels = parsePattern(typeData.pattern);
+
+  // Score overview
+  const scoreGridHtml = Object.entries(MODELS).map(([mname, dims]) => {
+    const rows = dims.map(dim => {
+      const lv = levels[dim];
+      return `<div class="dim-row">
+        <span class="dim-label">${DIM_NAMES[dim]}</span>
+        <span class="lvl-tag lvl-${lv}">${lv}</span>
+      </div>`;
+    }).join('');
+    return `<div class="model-block"><div class="model-name">${mname}</div>${rows}</div>`;
+  }).join('');
+
+  // Per-dim advice
+  const dimGroupsHtml = DIM_ORDER.map(dim => {
+    const lv = levels[dim];
+    const score = lv==='L'?'2分（≤3）' : lv==='M'?'4分（=4）' : '6分（≥5）';
+    const qIds = DIM_Q[dim];
+    const qRowsHtml = qIds.map(qId => {
+      const q = getQ(qId);
+      const opt = optForLevel(q, lv);
+      const letter = optLetter(q, opt);
+      return `<div class="q-row">
+        <div class="q-num">Q${q.num}</div>
+        <div class="q-body">
+          <div class="q-text">${trunc(q.text, 65)}</div>
+          <div class="q-ans-row">
+            <span class="q-ans-letter">${letter}</span>
+            <span class="q-ans-text">${opt ? trunc(opt.label, 30) : '—'}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="dim-grp">
+      <div class="dim-grp-head">
+        <span class="dgh-name">${DIM_NAMES[dim]}</span>
+        <span class="lvl-tag lvl-${lv}">${lv}</span>
+        <span class="dgh-score">目标 ${score}</span>
+      </div>
+      <div class="q-rows">${qRowsHtml}</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `<div class="card adv-card">
+    <div class="adv-head">
+      ${imgTag(code)}
+      <div>
+        <div class="adv-code">${code}</div>
+        <div class="adv-cn">${lib.cn}</div>
+        <div class="adv-intro">${lib.intro}</div>
+        <div class="adv-pattern">${typeData.pattern}</div>
+      </div>
+    </div>
+    <div class="adv-body">
+      <div class="sec-label">各维度目标等级</div>
+      <div class="score-grid">${scoreGridHtml}</div>
+      <div class="sec-label" style="margin-bottom:14px">逐题作答建议（两题均按推荐选项作答即可精准命中该维度等级）</div>
+      <div class="dim-groups">${dimGroupsHtml}</div>
+      <div class="sp-note">
+        📌 <strong>特殊题提示：</strong>「您平时有什么爱好？」选 A（吃喝拉撒）、B（艺术爱好）或 D（健身），<strong>不要选 C（饮酒）</strong>，否则会触发酒鬼分支影响结果。
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  WIKI
+// ═══════════════════════════════════════════════
+function buildWiki() {
+  const all = [...NORMAL_TYPES.map(t=>t.code), 'HHHH', 'DRUNK'];
+  document.getElementById('wiki-grid').innerHTML = all.map(code => {
+    const lib = TYPE_LIB[code];
+    const typeData = NORMAL_TYPES.find(t=>t.code===code);
+    const patternHtml = typeData
+      ? `<div class="wc-pattern">${typeData.pattern}</div>`
+      : `<div class="wc-pattern sp-pattern">${code==='DRUNK'?'彩蛋：特殊题触发':'兜底：匹配度 < 60%'}</div>`;
+    const extra = code==='DRUNK' ? ' wiki-drunk' : code==='HHHH' ? ' wiki-hhhh' : '';
+    const descId = 'wd-'+safe(code);
+    const btnId  = 'wb-'+safe(code);
+    return `<div class="wiki-card${extra}">
+      <div class="wiki-img-wrap">
+        <img class="wiki-img" src="${TYPE_IMGS[code]}" alt="${code}">
+        <div class="wiki-img-overlay"></div>
+      </div>
+      <div class="wiki-body">
+        <div class="wc-top">
+          <span class="wc-code">${code}</span>
+          <span class="wc-cn">${lib.cn}</span>
+        </div>
+        <div class="wc-intro">${lib.intro}</div>
+        <div class="wc-desc" id="${descId}">${lib.desc}</div>
+        <button class="wc-expand" id="${btnId}" onclick="toggleDesc('${descId}','${btnId}')">展开全文 ↓</button>
+        ${patternHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDesc(descId, btnId) {
+  const el = document.getElementById(descId);
+  const btn = document.getElementById(btnId);
+  const expanded = el.classList.toggle('expanded');
+  btn.textContent = expanded ? '收起 ↑' : '展开全文 ↓';
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+buildGuideGrid();
+buildWiki();
+</script>
+</body>
+</html>
